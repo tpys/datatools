@@ -1,7 +1,6 @@
 import os
 import numpy as np
-import matplotlib
-matplotlib.use("Pdf")
+
 import cv2
 import caffe
 import math

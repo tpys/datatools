@@ -8,38 +8,34 @@ import numpy as np
 import math
 from MtcnnDetector import FaceDetector
 
-import tools
-
-
-class Methods:
-    
-    def __init__(self):
-        pass
-    
-    @staticmethod
-    def _112x96_mc40(input_image, points, output_size = (96, 112), ec_mc_y = 40):
-        eye_center = ((points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2)
-        mouth_center = ((points[3][0] + points[4][0]) / 2, (points[3][1] + points[4][1]) / 2)
-        angle = math.atan2(mouth_center[0] - eye_center[0], mouth_center[1] - eye_center[1]) / math.pi * -180.0
-        # angle = math.atan2(points[1][1] - points[0][1], points[1][0] - points[0][0]) / math.pi * 180.0
-        scale = ec_mc_y / math.sqrt((mouth_center[0] - eye_center[0])**2 + (mouth_center[1] - eye_center[1])**2)
-        center = ((points[0][0] + points[1][0] + points[3][0] + points[4][0]) / 4, (points[0][1] + points[1][1] + points[3][1] + points[4][1]) / 4)
-        rot_mat = cv2.getRotationMatrix2D(center, angle, scale)
-        rot_mat[0][2] -= (center[0] - output_size[0] / 2)
-        rot_mat[1][2] -= (center[1] - output_size[1] / 2)
-        warp_dst = cv2.warpAffine(input_image, rot_mat, output_size)
-        return warp_dst
+import utils
 
 
 
-class Aligner:
-    def __init__(self, root_path, gpu_id = 0, save_path_suffix = '-aligned', align_method = Methods._112x96_mc40):
-        
-        self.detector = FaceDetector(minsize = 20, gpuid = gpu_id, fastresize = False)
+def _112x96_mc40(input_image, points, output_size = (96, 112), ec_mc_y = 40):
+    eye_center = ((points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2)
+    mouth_center = ((points[3][0] + points[4][0]) / 2, (points[3][1] + points[4][1]) / 2)
+    angle = math.atan2(mouth_center[0] - eye_center[0], mouth_center[1] - eye_center[1]) / math.pi * -180.0
+    # angle = math.atan2(points[1][1] - points[0][1], points[1][0] - points[0][0]) / math.pi * 180.0
+    scale = ec_mc_y / math.sqrt((mouth_center[0] - eye_center[0])**2 + (mouth_center[1] - eye_center[1])**2)
+    center = ((points[0][0] + points[1][0] + points[3][0] + points[4][0]) / 4, (points[0][1] + points[1][1] + points[3][1] + points[4][1]) / 4)
+    rot_mat = cv2.getRotationMatrix2D(center, angle, scale)
+    rot_mat[0][2] -= (center[0] - output_size[0] / 2)
+    rot_mat[1][2] -= (center[1] - output_size[1] / 2)
+    warp_dst = cv2.warpAffine(input_image, rot_mat, output_size)
+    return warp_dst
+
+
+
+class Maker:
+    def __init__(self, root_path, gpu_id = 0, save_path_suffix = '-aligned', align_method = _112x96_mc40, save_landmarks=True, save_aligned_img=False):
+        self.gpu_id = gpu_id
+        self.detector = []
         self.root_path = root_path
         self.save_path_suffix = save_path_suffix
         self.align_method = align_method
-
+        self.save_landmarks = save_landmarks
+        self.save_aligned_img = save_aligned_img
 
     def _alignment(self, func,img, face_points):
         return func(img, face_points)
@@ -53,7 +49,10 @@ class Aligner:
                
                 for sub_parent, sub_dirnames, sub_filenames in os.walk(root_path+"/"+dirname):
                     for sub_filename in sub_filenames:
-                        tools.mkdirP(root_path + self.save_path_suffix +"/"+dirname)
+                        if self.save_aligned_img:
+                            utils.mkdirP(root_path + self.save_path_suffix +"/"+dirname)
+                        if self.save_landmarks:
+                            utils.mkdirP(root_path + "_landmarks/"+dirname)
                         if(sub_filename.endswith("png") or sub_filename.endswith("jpg") or sub_filename.endswith("bmp")):
                             tmp = {}
                             tmp['filename'] = dirname + "/" + sub_filename
@@ -62,8 +61,12 @@ class Aligner:
                 class_label += 1
         return lines   
 
-    def align(self):
-        tools.mkdirP(self.root_path + self.save_path_suffix)
+    def make(self):
+        self.detector = FaceDetector(minsize = 20, gpuid = self.gpu_id, fastresize = False)
+        if self.save_aligned_img:
+            utils.mkdirP(self.root_path + self.save_path_suffix)
+        if self.save_landmarks:
+            utils.mkdirP(self.root_path + "_landmarks")
         #f_list = open(list_path, "r")
         all_files = self.getLines()
         N = len(all_files)
@@ -76,21 +79,6 @@ class Aligner:
                 print("{0}/{1}" .format(cnt + 1, N))
             cnt += 1
 
-
-    def AlignWuXiang(self, input_image, points, output_size = (96, 112), ec_mc_y = 40):
-        eye_center = ((points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2)
-        mouth_center = ((points[3][0] + points[4][0]) / 2, (points[3][1] + points[4][1]) / 2)
-        angle = math.atan2(mouth_center[0] - eye_center[0], mouth_center[1] - eye_center[1]) / math.pi * -180.0
-        # angle = math.atan2(points[1][1] - points[0][1], points[1][0] - points[0][0]) / math.pi * 180.0
-        scale = ec_mc_y / math.sqrt((mouth_center[0] - eye_center[0])**2 + (mouth_center[1] - eye_center[1])**2)
-        center = ((points[0][0] + points[1][0] + points[3][0] + points[4][0]) / 4, (points[0][1] + points[1][1] + points[3][1] + points[4][1]) / 4)
-        rot_mat = cv2.getRotationMatrix2D(center, angle, scale)
-        rot_mat[0][2] -= (center[0] - output_size[0] / 2)
-        rot_mat[1][2] -= (center[1] - output_size[1] / 2)
-        warp_dst = cv2.warpAffine(input_image, rot_mat, output_size)
-        return warp_dst
-
-    
 
     def align_and_save_face(self, filename):
         detector = self.detector
@@ -119,7 +107,6 @@ class Aligner:
         elif numbox == 1:
             default_face_idx = 0
         if default_face_idx is not None:
-            #similarTransformation = cv2.estimateRigidTransform(np.array(default_face[2]), dst_points, fullAffine=False)
             face_points = []
             for j in range(5):        
                 tmp =  [points[j,default_face_idx], points[j + 5,default_face_idx]]
@@ -130,5 +117,8 @@ class Aligner:
            
                 #print alignedImg
             #print path + self.save_path_suffix + "/" + filename
-            cv2.imwrite(path + self.save_path_suffix + "/" + filename, alignedImg)
+            if self.save_aligned_img:
+                cv2.imwrite(path + self.save_path_suffix + "/" + filename, alignedImg)
+            if self.save_landmarks:
+                np.savetxt(path + "_landmarks/" + filename[:-4] + ".txt", np.array(face_points))
 

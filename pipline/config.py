@@ -1,6 +1,6 @@
 import os,sys
 
-CAFFE_ROOT = 'F:/CoreLib/caffe-windows/Build/x64/Release/pycaffe'  #change to your caffe root path
+CAFFE_ROOT = '/home/maxiao/CoreLib/caffe_windows_ms/python'  #change to your caffe root path
 
 
 
