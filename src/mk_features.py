@@ -5,7 +5,7 @@ import os
 import numpy as np
 import random
 import nets
-import alignment
+import align_methods
 import cv2
 
 def _getDatum(url):
@@ -15,9 +15,10 @@ def _getDatum(url):
 
 
     ldmk = np.loadtxt(url["ldmk_path"])
-    face_points = ldmk.tolist()           
-    alignedImg = alignment._112x96_mc40(img, face_points)
-
+    face_points = ldmk.tolist()
+    print face_points      
+    alignedImg = align_methods._112x96_mc40(img, face_points)
+    print alignedImg.shape 
     
     return {"img": alignedImg, "path":url["img_path"]}
 
@@ -29,7 +30,7 @@ def _saveFeature(elem):
 
 
 class Maker:
-    def __init__(self,root_path_, model_prefix):
+    def __init__(self,root_path_, model_prefix, gpu_id=0):
         self.root_path = root_path_
         self.model_prefix = model_prefix
         self.ldmk_path = self.root_path + "_landmarks"
@@ -37,7 +38,7 @@ class Maker:
         
         prototxt = model_prefix + ".prototxt"
         caffemodel = model_prefix + ".caffemodel"
-        self.net = nets.ResFace(prototxt, caffemodel,6)
+        self.net = nets.ResFace(prototxt, caffemodel,gpu_id)
 
 
 
@@ -100,7 +101,7 @@ class Maker:
             new_chunk = filter(self._filteringOut, chunk)
             print "Filtering out: {0}".format(len(chunk) - len(new_chunk))
 
-            #_getDatum(new_chunk[0])
+            _getDatum(new_chunk[0])
 
             results = pool.map(_getDatum, new_chunk)
             print "Reading out: {0}".format(len(results))

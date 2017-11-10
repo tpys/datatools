@@ -271,8 +271,8 @@ class FaceDetector(object):
             #second stage
             tempimg =  np.zeros((24,24,3,numbox))
             for k in range(numbox):
-                tmp =  np.zeros((tmph[k],tmpw[k],3))
-                tmp[dy[k]-1:edy[k],dx[k]-1:edx[k],:]=img[y[k]-1:ey[k],x[k]-1:ex[k],:] 
+                tmp =  np.zeros((int(tmph[k]),int(tmpw[k]),3))
+                tmp[int(dy[k])-1:int(edy[k]),int(dx[k])-1:int(edx[k]),:]=img[int(y[k])-1:int(ey[k]),int(x[k])-1:int(ex[k]),:] 
                 tempimg[:,:,:,k]= cv2.resize(tmp,(24, 24),interpolation=cv2.INTER_NEAREST)
             tempimg = (tempimg-127.5)*0.0078125
             tempimg = tempimg.transpose((3,2,1,0)) 
@@ -299,7 +299,7 @@ class FaceDetector(object):
                 tempimg =  np.zeros((48,48,3,numbox))
                 for k in range(numbox):
                     tmp =  np.zeros((tmph[k],tmpw[k],3))
-                    tmp[dy[k]-1:edy[k],dx[k]-1:edx[k],:]=img[y[k]-1:ey[k],x[k]-1:ex[k],:] 
+                    tmp[int(dy[k])-1:int(edy[k]),int(dx[k])-1:int(edx[k]),:]=img[int(y[k])-1:int(ey[k]),int(x[k])-1:int(ex[k]),:] 
                     tempimg[:,:,:,k]= cv2.resize(tmp,(48, 48),interpolation=cv2.INTER_NEAREST)    
                 tempimg = (tempimg-127.5)*0.0078125 
                 tempimg = tempimg.transpose((3,2,1,0)) 
